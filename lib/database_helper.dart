@@ -14,7 +14,7 @@ class DatabaseHelper {
 
   static Database? _database;
 
-  // Bump the version from 1 to 2
+  // We are on version 2
   static const int _dbVersion = 2;
 
   // Getter for the database instance
@@ -32,13 +32,13 @@ class DatabaseHelper {
       path,
       version: _dbVersion,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade, // <-- Handle upgrades here
+      onUpgrade: _onUpgrade,
     );
   }
 
-  // Create the required tables when the database is first created
+  // Create tables on first run
   Future _onCreate(Database db, int version) async {
-    // Create Profiles table for storing learner's name and age
+    // Create Profiles table
     await db.execute('''
       CREATE TABLE Profiles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,7 +47,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create Progress table to log lesson progress and scores
+    // Create Progress table
     await db.execute('''
       CREATE TABLE Progress (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,9 +59,9 @@ class DatabaseHelper {
       )
     ''');
 
-    // Since we're at version 2 from the start, also create InteractionLogs
+    // Use IF NOT EXISTS to avoid error if table already exists
     await db.execute('''
-      CREATE TABLE InteractionLogs (
+      CREATE TABLE IF NOT EXISTS InteractionLogs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         profile_id INTEGER,
         interaction_type TEXT,
@@ -72,12 +72,12 @@ class DatabaseHelper {
     ''');
   }
 
-  // Handle upgrades from older versions (e.g., 1) to newer (2, etc.)
+  // Handle upgrades from version 1 to 2, etc.
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       // Create InteractionLogs table if it doesn't exist
       await db.execute('''
-        CREATE TABLE InteractionLogs (
+        CREATE TABLE IF NOT EXISTS InteractionLogs (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           profile_id INTEGER,
           interaction_type TEXT,
@@ -91,7 +91,7 @@ class DatabaseHelper {
 
   // Insert a new profile
   Future<int> insertProfile(Map<String, dynamic> profile) async {
-    Database db = await database;
+    final db = await database;
     return await db.insert('Profiles', profile);
   }
 
@@ -108,7 +108,7 @@ class DatabaseHelper {
 
   // Retrieve all profiles
   Future<List<Map<String, dynamic>>> getProfiles() async {
-    Database db = await database;
+    final db = await database;
     return await db.query('Profiles');
   }
 
@@ -119,9 +119,7 @@ class DatabaseHelper {
     required String content,
   }) async {
     final db = await database;
-    // We'll store a simple timestamp as milliseconds since epoch
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-
     return await db.insert('InteractionLogs', {
       'profile_id': profileId,
       'interaction_type': interactionType,

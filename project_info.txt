@@ -88,6 +88,9 @@ class DatabaseHelper {
 
   static Database? _database;
 
+  // Bump the version from 1 to 2
+  static const int _dbVersion = 2;
+
   // Getter for the database instance
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -101,8 +104,9 @@ class DatabaseHelper {
     String path = join(documentsDirectory.path, 'ifunlearn.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: _dbVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade, // <-- Handle upgrades here
     );
   }
 
@@ -128,6 +132,35 @@ class DatabaseHelper {
         FOREIGN KEY (profile_id) REFERENCES Profiles (id)
       )
     ''');
+
+    // Since we're at version 2 from the start, also create InteractionLogs
+    await db.execute('''
+      CREATE TABLE InteractionLogs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        profile_id INTEGER,
+        interaction_type TEXT,
+        content TEXT,
+        timestamp INTEGER,
+        FOREIGN KEY (profile_id) REFERENCES Profiles (id)
+      )
+    ''');
+  }
+
+  // Handle upgrades from older versions (e.g., 1) to newer (2, etc.)
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Create InteractionLogs table if it doesn't exist
+      await db.execute('''
+        CREATE TABLE InteractionLogs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          profile_id INTEGER,
+          interaction_type TEXT,
+          content TEXT,
+          timestamp INTEGER,
+          FOREIGN KEY (profile_id) REFERENCES Profiles (id)
+        )
+      ''');
+    }
   }
 
   // Insert a new profile
@@ -151,6 +184,24 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getProfiles() async {
     Database db = await database;
     return await db.query('Profiles');
+  }
+
+  // Insert a new interaction log
+  Future<int> insertInteractionLog({
+    required int profileId,
+    required String interactionType,
+    required String content,
+  }) async {
+    final db = await database;
+    // We'll store a simple timestamp as milliseconds since epoch
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    return await db.insert('InteractionLogs', {
+      'profile_id': profileId,
+      'interaction_type': interactionType,
+      'content': content,
+      'timestamp': timestamp,
+    });
   }
 }
 
