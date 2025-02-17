@@ -127,4 +127,33 @@ class DatabaseHelper {
       'timestamp': timestamp,
     });
   }
+
+
+    // ...
+
+  // (Add this method somewhere near the bottom)
+  // Retrieve the N most recent interaction logs for a given profile
+  Future<List<Map<String, dynamic>>> getRecentInteractions({
+    required int profileId,
+    int limit = 5,
+  }) async {
+    final db = await database;
+    return await db.query(
+      'InteractionLogs',
+      where: 'profile_id = ?',
+      whereArgs: [profileId],
+      orderBy: 'timestamp DESC',
+      limit: limit,
+    );
+  }
+
+  // Or, if you prefer just a total count of logs:
+  Future<int> getInteractionCount(int profileId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM InteractionLogs WHERE profile_id = ?',
+      [profileId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
 }

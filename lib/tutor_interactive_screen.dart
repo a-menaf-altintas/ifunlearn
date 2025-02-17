@@ -1,5 +1,3 @@
-// FILE: lib/tutor_interactive_screen.dart
-
 import 'package:flutter/material.dart';
 
 class TutorInteractiveScreen extends StatefulWidget {
@@ -13,44 +11,38 @@ class TutorInteractiveScreen extends StatefulWidget {
 }
 
 class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
-  // Initial tutor message; in a real scenario, set by a decision engine.
   String tutorMessage =
       "Hello, let's start your session! Draw something or say something to begin.";
 
-  // Variables to hold user inputs
   String userVoiceInput = "";
   List<Offset?> drawingPoints = [];
 
-  // A placeholder "decision engine" that updates the tutor message based on interaction.
-  void _processUserInteraction() {
-    setState(() {
-      tutorMessage =
-          "Great job! Based on your input, let's move to the next activity.";
-      // Clear the inputs (if needed) after processing.
-      userVoiceInput = "";
-      drawingPoints = [];
-    });
-  }
-
-  // Called as the user draws on the canvas
   void _addDrawingPoint(Offset point) {
     setState(() {
       drawingPoints.add(point);
     });
   }
 
-  // Called when the drawing gesture ends
   void _endDrawing() {
-    // Process the drawing input
+    // If you want the drawing to remain, do not clear drawingPoints here.
     _processUserInteraction();
   }
 
-  // Simulated voice input handler; in a real app, integrate a speech-to-text package
   void _simulateVoiceInput(String input) {
     setState(() {
       userVoiceInput = input;
     });
     _processUserInteraction();
+  }
+
+  void _processUserInteraction() {
+    setState(() {
+      tutorMessage =
+          "Great job! Based on your input, let's move to the next activity.";
+      // If you *don't* want to clear the canvas automatically, leave this out:
+      // drawingPoints.clear();
+      userVoiceInput = "";
+    });
   }
 
   @override
@@ -74,13 +66,14 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            // Drawing canvas for free-hand input
+
+            // Drawing area
             Expanded(
               child: GestureDetector(
                 onPanUpdate: (details) {
                   RenderBox? box = context.findRenderObject() as RenderBox?;
                   if (box != null) {
-                    Offset localPosition =
+                    final localPosition =
                         box.globalToLocal(details.globalPosition);
                     _addDrawingPoint(localPosition);
                   }
@@ -97,7 +90,19 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            // Voice input area (simulated via TextField)
+
+            // <-- ADD YOUR CLEAR BUTTON HERE
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  drawingPoints.clear();
+                });
+              },
+              child: const Text('Clear Canvas'),
+            ),
+            const SizedBox(height: 10),
+
+            // Voice input text field
             TextField(
               onSubmitted: _simulateVoiceInput,
               decoration: const InputDecoration(
@@ -124,7 +129,6 @@ class DrawingPainter extends CustomPainter {
       ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round;
 
-    // Draw continuous lines between consecutive points
     for (int i = 0; i < drawingPoints.length - 1; i++) {
       if (drawingPoints[i] != null && drawingPoints[i + 1] != null) {
         canvas.drawLine(drawingPoints[i]!, drawingPoints[i + 1]!, paint);
