@@ -1,39 +1,31 @@
 
 --- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/test/widget_test.dart ---
-// This is a basic Flutter widget test.
+// FILE: test/widget_test.dart
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Basic Flutter widget test referencing the iFunLearnApp.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:ifunlearn/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const iFunLearnApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that our initial screen (ProfileSelectionScreen) is found.
+    expect(find.text('Profiles'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // No actual "counter" in this project, but this ensures the app loads without error.
+    // You can remove or customize this test as you build out real features.
   });
 }
 
 --- END OF FILE ---
 
 --- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/tutor_home_screen.dart ---
+// FILE: lib/tutor_home_screen.dart
+
 import 'package:flutter/material.dart';
 import 'tutor_interactive_screen.dart';
 
@@ -59,6 +51,7 @@ class TutorHomeScreen extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
+                // Navigate to the interactive tutor session
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -79,6 +72,8 @@ class TutorHomeScreen extends StatelessWidget {
 --- END OF FILE ---
 
 --- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/database_helper.dart ---
+// FILE: lib/database_helper.dart
+
 import 'dart:async';
 import 'dart:io';
 import 'package:sqflite/sqflite.dart';
@@ -135,7 +130,7 @@ class DatabaseHelper {
     ''');
   }
 
-  // CRUD operation: Insert a new profile
+  // Insert a new profile
   Future<int> insertProfile(Map<String, dynamic> profile) async {
     Database db = await database;
     return await db.insert('Profiles', profile);
@@ -152,7 +147,7 @@ class DatabaseHelper {
     return results.isNotEmpty;
   }
 
-  // Retrieve all profiles from the database
+  // Retrieve all profiles
   Future<List<Map<String, dynamic>>> getProfiles() async {
     Database db = await database;
     return await db.query('Profiles');
@@ -162,6 +157,8 @@ class DatabaseHelper {
 --- END OF FILE ---
 
 --- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/main.dart ---
+// FILE: lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'profile_selection_screen.dart';
 
@@ -175,7 +172,7 @@ class iFunLearnApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // <-- Hide the debug banner
+      debugShowCheckedModeBanner: false, // Hide the debug banner
       title: 'iFunLearn',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -188,6 +185,8 @@ class iFunLearnApp extends StatelessWidget {
 --- END OF FILE ---
 
 --- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/profile_creation_screen.dart ---
+// FILE: lib/profile_creation_screen.dart
+
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
 
@@ -213,7 +212,9 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       bool exists = await DatabaseHelper().profileExists(name, age);
       if (exists) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile already exists. Please create a unique name.')),
+          const SnackBar(
+            content: Text('Profile already exists. Please create a unique name.'),
+          ),
         );
         return;
       }
@@ -294,10 +295,9 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 --- END OF FILE ---
 
 --- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/tutor_interactive_screen.dart ---
-// tutor_interactive_screen.dart
+// FILE: lib/tutor_interactive_screen.dart
 
 import 'package:flutter/material.dart';
-
 
 class TutorInteractiveScreen extends StatefulWidget {
   final Map<String, dynamic> profile;
@@ -310,7 +310,7 @@ class TutorInteractiveScreen extends StatefulWidget {
 }
 
 class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
-  // Initial tutor message; in a real scenario this would be set by a decision engine.
+  // Initial tutor message; in a real scenario, set by a decision engine.
   String tutorMessage =
       "Hello, let's start your session! Draw something or say something to begin.";
 
@@ -318,32 +318,31 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
   String userVoiceInput = "";
   List<Offset?> drawingPoints = [];
 
-  // A placeholder decision engine that updates the tutor message based on interaction.
-  // In a real implementation, this would consult local progress data and determine the next lesson.
+  // A placeholder "decision engine" that updates the tutor message based on interaction.
   void _processUserInteraction() {
-    // For this demo, we simply change the tutor's message after input.
     setState(() {
-      tutorMessage = "Great job! Based on your input, let's move to the next activity.";
+      tutorMessage =
+          "Great job! Based on your input, let's move to the next activity.";
       // Clear the inputs (if needed) after processing.
       userVoiceInput = "";
       drawingPoints = [];
     });
   }
 
-  // Called as the user draws on the canvas.
+  // Called as the user draws on the canvas
   void _addDrawingPoint(Offset point) {
     setState(() {
       drawingPoints.add(point);
     });
   }
 
-  // Called when the drawing gesture ends.
+  // Called when the drawing gesture ends
   void _endDrawing() {
-    // Process the drawing input; here, it simply triggers the decision engine.
+    // Process the drawing input
     _processUserInteraction();
   }
 
-  // Simulated voice input handler; in a real app, integrate with a speech-to-text package.
+  // Simulated voice input handler; in a real app, integrate a speech-to-text package
   void _simulateVoiceInput(String input) {
     setState(() {
       userVoiceInput = input;
@@ -361,7 +360,7 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            // Tutor's message area that updates automatically.
+            // Tutor's message area
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16.0),
@@ -372,7 +371,7 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            // Drawing canvas for free-hand drawing input.
+            // Drawing canvas for free-hand input
             Expanded(
               child: GestureDetector(
                 onPanUpdate: (details) {
@@ -395,7 +394,7 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            // Voice input area (simulated via TextField).
+            // Voice input area (simulated via TextField)
             TextField(
               onSubmitted: _simulateVoiceInput,
               decoration: const InputDecoration(
@@ -422,6 +421,7 @@ class DrawingPainter extends CustomPainter {
       ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round;
 
+    // Draw continuous lines between consecutive points
     for (int i = 0; i < drawingPoints.length - 1; i++) {
       if (drawingPoints[i] != null && drawingPoints[i + 1] != null) {
         canvas.drawLine(drawingPoints[i]!, drawingPoints[i + 1]!, paint);
@@ -437,7 +437,7 @@ class DrawingPainter extends CustomPainter {
 --- END OF FILE ---
 
 --- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/profile_selection_screen.dart ---
-// FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/profile_selection_screen.dart
+// FILE: lib/profile_selection_screen.dart
 
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
@@ -530,7 +530,6 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
                   style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
-
                 const SizedBox(height: 16),
 
                 // If no profiles, show a message
@@ -563,7 +562,6 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
                     ),
                   ],
                 ],
-
                 const SizedBox(height: 24),
 
                 // "Add a new profile" button
