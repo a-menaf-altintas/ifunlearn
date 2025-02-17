@@ -31,6 +31,7 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
         strokes.last.isComplete = true;
       }
     });
+    _processDrawing();
   }
 
   void _undoLastStroke() {
@@ -45,17 +46,72 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
     setState(() {
       strokes.clear();
     });
+    _updateTutorMessage("Canvas cleared. Try drawing a shape!");
   }
 
-  void _changePenThickness(double thickness) {
+  void _simulateVoiceInput(String input) {
     setState(() {
-      penThickness = thickness;
+      userVoiceInput = input;
+    });
+    _processVoiceInput(input);
+  }
+
+  // **Tutor Logic: Process Voice Input**
+  void _processVoiceInput(String input) {
+    if (input.toLowerCase().contains("circle")) {
+      _updateTutorMessage("Great! A circle is round. Want to draw one?");
+    } else if (input.toLowerCase().contains("square")) {
+      _updateTutorMessage("Squares have four equal sides. Try drawing one!");
+    } else {
+      _updateTutorMessage("I heard: \"$input\". Let's explore that in our lesson!");
+    }
+  }
+
+  // **Tutor Logic: Process Drawing**
+  void _processDrawing() {
+    String detectedShape = _recognizeShape(); // Placeholder function
+
+    if (detectedShape == "circle") {
+      _updateTutorMessage("Nice attempt! Try making the circle smoother.");
+    } else if (detectedShape == "square") {
+      _updateTutorMessage("That looks like a square! Well done.");
+    } else if (detectedShape == "unknown") {
+      _updateTutorMessage("Hmm, I can't recognize that shape. Try again!");
+    } else {
+      _updateTutorMessage("Interesting! Want to try another drawing?");
+    }
+  }
+
+  // **Basic Shape Recognition Placeholder**
+  String _recognizeShape() {
+    if (strokes.isEmpty) return "unknown";
+
+    // Placeholder logic: real detection will use ML/OpenCV later
+    int pointCount = strokes.fold(0, (sum, stroke) => sum + stroke.points.length);
+    
+    if (pointCount > 50) return "circle"; // Example: More points -> Assume a circle
+    if (pointCount > 20) return "square"; // Example: Fewer points -> Assume a square
+    
+    return "unknown";
+  }
+
+  // **Update Tutor Message**
+  void _updateTutorMessage(String message) {
+    setState(() {
+      tutorMessage = message;
     });
   }
 
-  void _changePenColor(Color color) {
+  // **Fix: Correctly Define These Methods**
+  void changePenColor(Color color) {
     setState(() {
       selectedColor = color;
+    });
+  }
+
+  void changePenThickness(double thickness) {
+    setState(() {
+      penThickness = thickness;
     });
   }
 
@@ -113,12 +169,7 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
-              onSubmitted: (input) {
-                setState(() {
-                  userVoiceInput = input;
-                  tutorMessage = "Great job! Based on your input, let's move to the next activity.";
-                });
-              },
+              onSubmitted: _simulateVoiceInput,
               decoration: const InputDecoration(
                 labelText: 'Talk to your tutor (simulate speech input)',
                 border: OutlineInputBorder(),
@@ -140,7 +191,7 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
               ))
           .toList(),
       onChanged: (color) {
-        if (color != null) _changePenColor(color);
+        if (color != null) changePenColor(color);
       },
     );
   }
@@ -155,13 +206,13 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
               ))
           .toList(),
       onChanged: (thickness) {
-        if (thickness != null) _changePenThickness(thickness);
+        if (thickness != null) changePenThickness(thickness);
       },
     );
   }
 }
 
-// **Stroke Class (Moved Outside the State Class)**
+// **Stroke Class**
 class Stroke {
   final Color color;
   final double thickness;
@@ -171,7 +222,7 @@ class Stroke {
   Stroke(this.color, this.thickness);
 }
 
-// **Custom Painter (Moved Outside the State Class)**
+// **Custom Painter**
 class DrawingPainter extends CustomPainter {
   final List<Stroke> strokes;
 
