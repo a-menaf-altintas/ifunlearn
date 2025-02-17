@@ -24,7 +24,6 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
   }
 
   void _endDrawing() {
-    // If you want the drawing to remain, do not clear drawingPoints here.
     _processUserInteraction();
   }
 
@@ -39,8 +38,6 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
     setState(() {
       tutorMessage =
           "Great job! Based on your input, let's move to the next activity.";
-      // If you *don't* want to clear the canvas automatically, leave this out:
-      // drawingPoints.clear();
       userVoiceInput = "";
     });
   }
@@ -51,76 +48,71 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
       appBar: AppBar(
         title: Text('Tutor Session for ${widget.profile['name']}'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            // Tutor's message area
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              color: Colors.blue.shade100,
-              child: Text(
-                tutorMessage,
-                style: const TextStyle(fontSize: 20),
-              ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16.0),
+            color: Colors.blue.shade100,
+            child: Text(
+              tutorMessage,
+              style: const TextStyle(fontSize: 20),
             ),
-            const SizedBox(height: 10),
+          ),
+          const SizedBox(height: 10),
 
-            // Drawing area
-            Expanded(
-              child: GestureDetector(
-                onPanUpdate: (details) {
-                  RenderBox? box = context.findRenderObject() as RenderBox?;
-                  if (box != null) {
-                    final localPosition =
-                        box.globalToLocal(details.globalPosition);
-                    _addDrawingPoint(localPosition);
-                  }
-                },
-                onPanEnd: (details) {
-                  _endDrawing();
-                },
+          // Corrected Drawing Area
+          Expanded(
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                RenderBox box = context.findRenderObject() as RenderBox;
+                final localPosition = box.globalToLocal(details.globalPosition);
+                _addDrawingPoint(localPosition);
+              },
+              onPanEnd: (_) => _endDrawing(),
+              child: Container(
+                color: Colors.white,
                 child: CustomPaint(
-                  painter: DrawingPainter(drawingPoints: drawingPoints),
-                  child: Container(
-                    color: Colors.white,
-                  ),
+                  painter: DrawingPainter(drawingPoints),
+                  size: Size.infinite,
                 ),
               ),
             ),
-            const SizedBox(height: 10),
+          ),
+          const SizedBox(height: 10),
 
-            // <-- ADD YOUR CLEAR BUTTON HERE
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  drawingPoints.clear();
-                });
-              },
-              child: const Text('Clear Canvas'),
-            ),
-            const SizedBox(height: 10),
+          // Clear Button
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                drawingPoints.clear();
+              });
+            },
+            child: const Text('Clear Canvas'),
+          ),
+          const SizedBox(height: 10),
 
-            // Voice input text field
-            TextField(
+          // Voice Input
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
               onSubmitted: _simulateVoiceInput,
               decoration: const InputDecoration(
                 labelText: 'Talk to your tutor (simulate speech input)',
                 border: OutlineInputBorder(),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class DrawingPainter extends CustomPainter {
-  final List<Offset?> drawingPoints;
+  final List<Offset?> points;
 
-  DrawingPainter({required this.drawingPoints});
+  DrawingPainter(this.points);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -129,14 +121,13 @@ class DrawingPainter extends CustomPainter {
       ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round;
 
-    for (int i = 0; i < drawingPoints.length - 1; i++) {
-      if (drawingPoints[i] != null && drawingPoints[i + 1] != null) {
-        canvas.drawLine(drawingPoints[i]!, drawingPoints[i + 1]!, paint);
+    for (int i = 0; i < points.length - 1; i++) {
+      if (points[i] != null && points[i + 1] != null) {
+        canvas.drawLine(points[i]!, points[i + 1]!, paint);
       }
     }
   }
 
   @override
-  bool shouldRepaint(DrawingPainter oldDelegate) =>
-      oldDelegate.drawingPoints != drawingPoints;
+  bool shouldRepaint(DrawingPainter oldDelegate) => oldDelegate.points != points;
 }

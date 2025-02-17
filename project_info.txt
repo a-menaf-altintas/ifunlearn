@@ -88,7 +88,7 @@ class DatabaseHelper {
 
   static Database? _database;
 
-  // Bump the version from 1 to 2
+  // We are on version 2
   static const int _dbVersion = 2;
 
   // Getter for the database instance
@@ -106,13 +106,13 @@ class DatabaseHelper {
       path,
       version: _dbVersion,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade, // <-- Handle upgrades here
+      onUpgrade: _onUpgrade,
     );
   }
 
-  // Create the required tables when the database is first created
+  // Create tables on first run
   Future _onCreate(Database db, int version) async {
-    // Create Profiles table for storing learner's name and age
+    // Create Profiles table
     await db.execute('''
       CREATE TABLE Profiles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,7 +121,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create Progress table to log lesson progress and scores
+    // Create Progress table
     await db.execute('''
       CREATE TABLE Progress (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -133,9 +133,9 @@ class DatabaseHelper {
       )
     ''');
 
-    // Since we're at version 2 from the start, also create InteractionLogs
+    // Use IF NOT EXISTS to avoid error if table already exists
     await db.execute('''
-      CREATE TABLE InteractionLogs (
+      CREATE TABLE IF NOT EXISTS InteractionLogs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         profile_id INTEGER,
         interaction_type TEXT,
@@ -146,12 +146,12 @@ class DatabaseHelper {
     ''');
   }
 
-  // Handle upgrades from older versions (e.g., 1) to newer (2, etc.)
+  // Handle upgrades from version 1 to 2, etc.
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       // Create InteractionLogs table if it doesn't exist
       await db.execute('''
-        CREATE TABLE InteractionLogs (
+        CREATE TABLE IF NOT EXISTS InteractionLogs (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           profile_id INTEGER,
           interaction_type TEXT,
@@ -165,7 +165,7 @@ class DatabaseHelper {
 
   // Insert a new profile
   Future<int> insertProfile(Map<String, dynamic> profile) async {
-    Database db = await database;
+    final db = await database;
     return await db.insert('Profiles', profile);
   }
 
@@ -182,7 +182,7 @@ class DatabaseHelper {
 
   // Retrieve all profiles
   Future<List<Map<String, dynamic>>> getProfiles() async {
-    Database db = await database;
+    final db = await database;
     return await db.query('Profiles');
   }
 
@@ -193,15 +193,42 @@ class DatabaseHelper {
     required String content,
   }) async {
     final db = await database;
-    // We'll store a simple timestamp as milliseconds since epoch
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-
     return await db.insert('InteractionLogs', {
       'profile_id': profileId,
       'interaction_type': interactionType,
       'content': content,
       'timestamp': timestamp,
     });
+  }
+
+
+    // ...
+
+  // (Add this method somewhere near the bottom)
+  // Retrieve the N most recent interaction logs for a given profile
+  Future<List<Map<String, dynamic>>> getRecentInteractions({
+    required int profileId,
+    int limit = 5,
+  }) async {
+    final db = await database;
+    return await db.query(
+      'InteractionLogs',
+      where: 'profile_id = ?',
+      whereArgs: [profileId],
+      orderBy: 'timestamp DESC',
+      limit: limit,
+    );
+  }
+
+  // Or, if you prefer just a total count of logs:
+  Future<int> getInteractionCount(int profileId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM InteractionLogs WHERE profile_id = ?',
+      [profileId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
   }
 }
 
@@ -346,8 +373,6 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 --- END OF FILE ---
 
 --- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/tutor_interactive_screen.dart ---
-// FILE: lib/tutor_interactive_screen.dart
-
 import 'package:flutter/material.dart';
 
 class TutorInteractiveScreen extends StatefulWidget {
@@ -361,44 +386,38 @@ class TutorInteractiveScreen extends StatefulWidget {
 }
 
 class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
-  // Initial tutor message; in a real scenario, set by a decision engine.
   String tutorMessage =
       "Hello, let's start your session! Draw something or say something to begin.";
 
-  // Variables to hold user inputs
   String userVoiceInput = "";
   List<Offset?> drawingPoints = [];
 
-  // A placeholder "decision engine" that updates the tutor message based on interaction.
-  void _processUserInteraction() {
-    setState(() {
-      tutorMessage =
-          "Great job! Based on your input, let's move to the next activity.";
-      // Clear the inputs (if needed) after processing.
-      userVoiceInput = "";
-      drawingPoints = [];
-    });
-  }
-
-  // Called as the user draws on the canvas
   void _addDrawingPoint(Offset point) {
     setState(() {
       drawingPoints.add(point);
     });
   }
 
-  // Called when the drawing gesture ends
   void _endDrawing() {
-    // Process the drawing input
+    // If you want the drawing to remain, do not clear drawingPoints here.
     _processUserInteraction();
   }
 
-  // Simulated voice input handler; in a real app, integrate a speech-to-text package
   void _simulateVoiceInput(String input) {
     setState(() {
       userVoiceInput = input;
     });
     _processUserInteraction();
+  }
+
+  void _processUserInteraction() {
+    setState(() {
+      tutorMessage =
+          "Great job! Based on your input, let's move to the next activity.";
+      // If you *don't* want to clear the canvas automatically, leave this out:
+      // drawingPoints.clear();
+      userVoiceInput = "";
+    });
   }
 
   @override
@@ -422,13 +441,14 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            // Drawing canvas for free-hand input
+
+            // Drawing area
             Expanded(
               child: GestureDetector(
                 onPanUpdate: (details) {
                   RenderBox? box = context.findRenderObject() as RenderBox?;
                   if (box != null) {
-                    Offset localPosition =
+                    final localPosition =
                         box.globalToLocal(details.globalPosition);
                     _addDrawingPoint(localPosition);
                   }
@@ -445,7 +465,19 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            // Voice input area (simulated via TextField)
+
+            // <-- ADD YOUR CLEAR BUTTON HERE
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  drawingPoints.clear();
+                });
+              },
+              child: const Text('Clear Canvas'),
+            ),
+            const SizedBox(height: 10),
+
+            // Voice input text field
             TextField(
               onSubmitted: _simulateVoiceInput,
               decoration: const InputDecoration(
@@ -472,7 +504,6 @@ class DrawingPainter extends CustomPainter {
       ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round;
 
-    // Draw continuous lines between consecutive points
     for (int i = 0; i < drawingPoints.length - 1; i++) {
       if (drawingPoints[i] != null && drawingPoints[i + 1] != null) {
         canvas.drawLine(drawingPoints[i]!, drawingPoints[i + 1]!, paint);
