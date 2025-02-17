@@ -1,4 +1,4 @@
-// FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/profile_selection_screen.dart
+// FILE: lib/profile_selection_screen.dart
 
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
@@ -91,7 +91,6 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
                   style: Theme.of(context).textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
-
                 const SizedBox(height: 16),
 
                 // If no profiles, show a message
@@ -124,7 +123,6 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
                     ),
                   ],
                 ],
-
                 const SizedBox(height: 24),
 
                 // "Add a new profile" button

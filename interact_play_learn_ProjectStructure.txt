@@ -1,0 +1,602 @@
+1. Project Overview (Offline-Focused)
+1.1 Purpose
+
+    Fully Offline Educational App: Provide reading, writing, and math lessons to children aged 4–17 without requiring any external server or internet connectivity.
+    Autonomous Tutor: The tutor decides lesson sequencing, demonstrations, and difficulty levels based on locally stored learner data.
+    Persistent Learner Profiles: Each user’s name, surname, age, and progress data are saved on the device, allowing the tutor to pick up exactly where the learner left off.
+
+1.2 Core Requirements
+
+    Offline Data Storage
+        All learner data (profiles, lesson progress, quiz results) saved locally in a device database or file system.
+        No reliance on cloud servers or external APIs.
+    Autonomous Tutoring
+        When the learner returns, the tutor reviews offline data and intelligently selects the appropriate next lesson/activity.
+    Local Shape Recognition
+        A lightweight shape-recognition module must run on-device.
+        If advanced ML is required, it should still function offline (e.g., TensorFlow Lite models embedded in the app).
+    Initial Registration
+        Collect the learner’s name, surname, and age to create a profile.
+        Possibly allow multiple profiles (e.g., siblings sharing a tablet).
+
+2. Feature Breakdown
+2.1 Learner Profiles
+
+    Registration Process: Prompt for full name, age, and optional avatar selection.
+    Secure Local Storage: Store profiles in a local database (e.g., SQLite, Room, Core Data, or a secure JSON file).
+    Profile Selection on Launch: On app start, show a list of existing profiles for the user to pick from.
+
+2.2 Autonomous Tutor
+
+    On-Device Decision Engine
+        Checks user’s saved progress, upcoming lessons, and last performance metrics to decide the next step.
+        No need for a cloud-based recommendation system.
+    Offline-First Lesson Flow
+        Learners can continue from where they left off even if there’s no connection.
+        The tutor can adapt difficulty, provide demonstrations, or skip lessons based on offline progress data.
+
+2.3 Curriculum & Content (Stored Locally)
+
+    Reading & Writing: Letters, phonics, sentences.
+    Math: Basic arithmetic to advanced concepts for older learners.
+    Drawing & Shape Recognition: Engaging tasks where the tutor can demonstrate and guide the child.
+    Local Content Files: All images, texts, audio files are bundled within the app or stored on-device so everything is accessible offline.
+
+2.4 Drawing & Local Shape Recognition
+
+    Offline Canvas: The child can freely draw shapes or letters.
+    On-Device Model or Classical Algorithm
+        Lightweight ML (TensorFlow Lite) or OpenCV for offline shape recognition.
+        Provide immediate feedback without needing an internet connection.
+
+2.5 Offline Progress Tracking
+
+    Local Database
+        Stores each activity’s completion status, scores, time spent, and skill progression.
+    Analysis & Next Step
+        When the child finishes a lesson or returns to the app, the tutor checks local metrics and decides the next recommended lesson or practice.
+
+2.6 Self-Contained Updates (Optional)
+
+    Manual Updates: If you ever want to release new content or updated modules, you can publish an app update.
+    Completely Self-Contained: The app as installed has all necessary data for core usage.
+
+3. High-Level Offline Architecture
+
+A simplified view of the app’s internal components:
+
+[ User Launches App ]
+     | (Select or Create Profile)
+     v
+[ Frontend UI + Interactive Tutor ]
+     | (Local function calls)
+     v
+[ Decision/Logic Layer (Offline) ]
+     | (Read/Write)
+     v
+[ Local Storage / Database ]
+     | (files, structured data, ML models, lesson content)
+     v
+[ Offline ML Modules ]
+      (Shape recognition, adaptive logic)
+
+    Frontend (UI)
+        Renders the tutor and lessons.
+        Manages real-time interaction with the user.
+    Decision/Logic Layer
+        Autonomy engine for selecting the next lesson or demonstration.
+        Evaluates child requests (e.g., “Show me how to draw a circle”) but checks if it’s beneficial to the learning path.
+    Local Storage
+        Database: Store profiles, progress logs, quiz results.
+        Assets: Text, images, shapes, pre-recorded audio.
+        ML Models (if using TensorFlow Lite or similar).
+        No external server is needed, as everything resides on the device.
+    Offline ML Modules
+        Lightweight shape recognition and adaptation logic (e.g., incremental learning or simple rule-based system that references local usage data).
+
+4. Technology Stack (Offline Emphasis)
+4.1 Cross-Platform Frontend
+
+    Flutter or React Native with offline-friendly approaches:
+        SQLite (via plugins) or local file storage for user data.
+        Bundled assets for lessons and media.
+
+4.2 Local Data Management
+
+    SQLite / Core Data / Room: Depends on your chosen framework:
+        Flutter: sqflite plugin
+        React Native: libraries like react-native-sqlite-storage
+        Or a no-SQL approach (e.g., Hive in Flutter).
+    File-based Storage: For large media or fallback if database usage is too heavy.
+
+4.3 Local AI/ML
+
+    TensorFlow Lite:
+        Deployed with a small model that can run inference on device.
+        Ideal for shape recognition if using an ML approach.
+    OpenCV (via local libraries or cross-platform wrappers):
+        For classical shape detection, edge detection, and image processing.
+
+4.4 Implementation Language
+
+    Dart (Flutter) or JavaScript/TypeScript (React Native), with integrated libraries for ML and local DB access.
+
+5. Detailed Implementation Plan
+5.1 Phase 1: Local Setup & Profile Management
+
+    Project Initialization:
+        Choose cross-platform framework.
+        Initialize local DB (or file) for user data.
+    User Registration:
+        Create form for name, surname, age.
+        Store data in local DB.
+        Display profile selection on subsequent launches.
+
+5.2 Phase 2: Basic Tutor & Offline Lessons
+
+    Tutor UI:
+        Simple cartoon avatar with basic dialogues.
+        Home screen with “Start Learning” or “Continue” button.
+    Local Lesson Content:
+        Basic reading, writing, and math activities.
+        Hard-code or store as local JSON to load content offline.
+
+5.3 Phase 3: Autonomy & Session Continuation
+
+    Decision Engine:
+        Reads last session’s data to determine the best next lesson.
+        Simple rule-based approach (e.g., if user struggled with addition, present more addition exercises).
+    Offline Storage for Progress:
+        Store quizzes completed, time spent, performance metrics.
+        On each new session, the app loads these metrics and decides the next step.
+
+5.4 Phase 4: Offline Drawing & Shape Recognition
+
+    Drawing Canvas:
+        Child can draw freehand.
+        Integrate basic tools (pen, eraser, color selection).
+    Local Shape Recognition:
+        Implement a TensorFlow Lite model or OpenCV library to detect circles, squares, letters, etc., entirely offline.
+        Tutor triggers prompts or demonstrates correct shapes if repeated errors are detected.
+
+5.5 Phase 5: Expanded Content & Adaptive Logic
+
+    Advanced Lessons:
+        More reading/writing modules (grammar, comprehension).
+        More advanced math (multiplication, fractions, geometry).
+    Deeper Autonomy:
+        More sophisticated rules for lesson transitions.
+        Possibly a local “mini engine” that weighs multiple factors (error rate, time spent, child requests).
+
+5.6 Phase 6: Testing & Optimization
+
+    User Testing:
+        Test the entire flow offline (e.g., airplane mode) to ensure no hidden dependencies.
+        Confirm profile creation, shape recognition, next-lesson logic, and saving progress works flawlessly.
+    Performance & Storage Optimization:
+        Ensure local DB reads/writes are quick.
+        Optimize shape detection to handle complex drawings on lower-end devices.
+
+5.7 Phase 7: Deployment
+
+    Local-Only Release:
+        Publish on App Stores (iOS, Android) with offline capabilities and no required permissions for network (if possible).
+    Web Version (Optional):
+        If a web version is needed, consider a Progressive Web App (PWA) with local IndexedDB or caching strategies for offline usage.
+        Some advanced offline features (like shape recognition) may require WASM modules or specialized JS libraries.
+
+6. Tools & Considerations
+
+    Device Compatibility
+        Focus on minimal device requirements; confirm local ML runs smoothly on lower-end devices if you target broad age ranges.
+    Data Security
+        Since personal data (name, age) is stored locally, consider encrypting these details or at least storing them securely in the device’s recommended secure storage.
+    App Updates
+        To provide new lessons or bug fixes, you can push app version updates. No server-based updates are required.
+
+7. Summary
+
+A fully offline education app is entirely feasible if you bundle:
+
+    All lesson materials (text, images, audio, etc.) within the app or stored locally post-installation.
+    A local database to store user profiles (name, surname, age) and progress.
+    Offline-compatible AI or rule-based logic for shape recognition and adaptive lesson sequencing.
+
+The tutor’s autonomous decision-making will rely on offline-stored data from previous sessions to figure out the child’s next step. By collecting name, surname, and age, the app can tailor lessons to the child’s age bracket and keep track of each individual learner’s growth, all without needing a server or internet connection.
+
+This design ensures privacy and accessibility, especially in environments with limited or no connectivity—yet still delivers a rich, interactive learning experience driven by an adaptive, offline tutor.
+
+
+
+
+Below is a concise technical development plan focusing on building the app from scratch with offline functionality, local data storage, autonomous tutor logic, and shape recognition, using only the learner’s name and age (no birth date). This outline targets the technical details—how to structure and implement each component to meet the app’s requirements.
+1. Core Technical Requirements
+
+    Platforms:
+        iOS, Android (and optionally Web if using a cross-platform framework).
+    Offline-First:
+        All essential data (user info, lessons, progress, shape-recognition model) must be stored and processed on-device with no server dependency.
+    User Data:
+        Name and Age for each learner profile.
+        Local database to store progress, lesson completions, quiz results, etc.
+    Autonomous Tutor:
+        Rules-based or on-device ML logic that decides lesson flow.
+        Able to override or redirect user requests based on the child’s needs.
+    Shape Recognition:
+        Local ML model (TensorFlow Lite) or classical computer vision (OpenCV) library to identify shapes/drawings offline.
+
+2. High-Level Architecture
+1. Overall Architecture
+
++-----------------------------+
+|   Profile Selection Screen  |
+| (Pick or Create a Profile) |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+|       Tutor Interaction     |  <-- (Main "session" UI)
+| - Asks user’s preference    |
+| - Guides user in reading,   |
+|   writing, math             |
+| - Interactive, game-like    |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+|   Local Decision Engine     |  <-- (Offline logic)
+| - Checks performance logs   |
+| - Adapts difficulty, topic  |
+| - Plans next steps          |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+|    Local Data Storage       |
+| - Interaction logs          |
+| - Performance metrics       |
+| - Local assets (animations, |
+|   game elements, etc.)      |
++-----------------------------+
+
+    Profile Selection Screen
+        Lets the user pick an existing profile or create a new one.
+        If a new user is created, the tutor starts by asking which topic they want to begin with.
+
+    Tutor Interaction
+        The main “session” screen that the user sees after profile selection.
+        The tutor can ask, “What would you like to learn today?” (reading/writing/math).
+        For new users, the tutor might ask extra questions to gauge their level.
+
+    Local Decision Engine
+        Based on user interactions, performance logs, and chosen topic, it decides the next activity.
+        If the user is doing well in reading, it might introduce writing or math next, to keep variety.
+        If the user struggles with math, it repeats or re-teaches math topics.
+
+    Local Data Storage
+        Stores user interactions, performance metrics, logs of correct/incorrect answers, times, etc.
+        Holds local animations, images, or “mini-games” used for reading/writing/math.
+
+2. Recording Interactions & Performance
+2.1 Data Model
+
+You already have a Profiles table. Extend your schema with something like:
+
+    Performance Table
+        id (PK)
+        profile_id (FK to Profiles)
+        skill_type (e.g., 'reading', 'writing', 'math')
+        level or difficulty
+        score or mastery (numeric)
+        last_attempt (timestamp)
+
+    InteractionLogs Table
+        id (PK)
+        profile_id (FK to Profiles)
+        timestamp (when the interaction occurred)
+        activity_type (e.g., 'reading_quiz', 'drawing_shapes', 'math_game')
+        outcome (pass/fail/score)
+        details (JSON or text with more data: user responses, mistakes, time spent, etc.)
+
+How It Works
+
+    During a session: Each time the user does an activity (like a reading quiz or writing exercise), you insert a record in InteractionLogs.
+    On Session Exit: You update Performance to reflect the new mastery level for reading, writing, or math.
+
+2.2 Deciding When to Record
+
+    Real-Time vs. Session End:
+        Real-Time Recording: Insert logs after each question or mini-game.
+        Session End Recording: Summarize the entire session’s results and insert them in one go.
+    Since you want to record performance “when the user exits,” you might keep a temporary in-memory log throughout the session, then write a final summary to the database at the end.
+
+3. Adaptive, Interactive Tutor Flow
+
+    Ask for User Preferences
+        If it’s a new user, the tutor might say: “Hi [Name]! Would you like to start with reading, writing, or math today?”
+        The user picks a topic.
+        The tutor checks if the user has prior logs for that topic. If not, it starts at an easy level; if yes, it picks an appropriate level.
+
+    Provide an Activity
+        Reading: Could be a short story or phonics exercise.
+        Writing: Possibly a letter-tracing mini-game or shape-drawing with feedback.
+        Math: A short quiz or puzzle, with game-like elements (score, fun graphics).
+
+    Record the Interaction
+        Each question or step is logged. The tutor also logs correct/incorrect attempts, time taken, etc.
+
+    Tutor Reaction
+        If the user is correct, the tutor might show an animation, say “Great job!”, or add some points.
+        If the user struggles, the tutor can give hints, repeat instructions, or switch to a simpler exercise.
+
+    Session End
+        When the user finishes or exits, the tutor saves performance data.
+        Next time, the tutor checks these logs and sees: “User struggled with multiplication last time—let’s review that or present it in a more interactive manner.”
+
+4. Storing Drawings, Animations & Game Elements
+
+    Local Assets
+        All animations or game elements are stored as local files (images, JSON definitions, or small video/animations).
+        For shape drawing, you might have a local TFLite or OpenCV-based shape recognizer.
+
+    User Drawings
+        If you want to store user drawings, you can save them as image files or vectors in local storage.
+        Alternatively, just record performance outcomes (e.g., “User drew a circle with 80% accuracy.”).
+
+    Game-Like Questions
+        Could be stored in JSON, each question specifying text, possible answers, correct answer, and a short animation path for correct or incorrect attempts.
+        The tutor loads these questions offline and randomizes them to keep it interesting.
+
+5. Motivation & Variety
+
+    Mixing Topics
+        The tutor shouldn’t always present the same subject. If the user has spent a while on reading, the tutor might suggest a quick math puzzle to keep variety.
+        If the user returns after a few days, the tutor checks logs: “Reading is at level 2, writing at level 1, math at level 3. Let’s do some writing to balance out.”
+
+    Rewards & Animations
+        Small “success” animations or points help the user feel rewarded.
+        Keep track of achievements (e.g., “5 reading lessons completed!”) in local logs.
+
+    Short Sessions
+        The tutor might offer 5–10 minute sessions to prevent boredom, then encourage the user to come back tomorrow.
+
+6. Implementation Details
+
+    Session Manager
+        A Dart/Flutter class that runs each session:
+            Tracks user input, mini-game state, partial results.
+            On session end, calls the DB to save logs.
+
+    Local Database
+        Extend your existing DatabaseHelper with methods like insertInteractionLog, updatePerformance, etc.
+        Example:
+
+    Future<int> insertInteractionLog(Map<String, dynamic> logData) async {
+      final db = await database;
+      return await db.insert('InteractionLogs', logData);
+    }
+
+Decision Engine
+
+    Could be a simple rules-based system:
+
+        if (mathMastery < 50) {
+          // Offer math activity
+        } else if (readingMastery < 50) {
+          // Offer reading
+        } else {
+          // Offer writing
+        }
+
+        Or more advanced, e.g., local ML model if you want deeper adaptation.
+
+    Offline Animations
+        Bundle .json or .gif files (or Lottie animations) for success/failure.
+        Load them from assets/animations/ in Flutter.
+
+7. Example Workflow
+
+    User Launches App
+        Picks profile “Elizabeth.”
+
+    Tutor Checks DB
+        Sees reading=60, writing=40, math=30 (some hypothetical mastery).
+
+    Tutor Asks
+        “Hey Elizabeth! What do you want to practice first—reading, writing, or math?”
+
+    User Chooses “Math”
+        Tutor presents a math puzzle.
+        Logs each question attempt in InteractionLogs.
+
+    User Exits
+        Tutor sums up user’s math performance (e.g., correct 4/5).
+        Writes to Performance (math=35 now, slight improvement).
+        Next time user returns, the tutor sees math=35 and might present more math or a different subject if the user wants variety.
+
+8. Putting It All Together
+
+    Profile Creation & Selection (already done).
+
+    Main Tutor Screen:
+        Shows an interactive avatar or chat-like interface.
+        Asks user for preference or suggests a topic if logs show a weakness.
+
+    Activity Screens (Reading, Writing, Math):
+        Each activity logs the user’s interactions.
+        Possibly includes drawing components for writing.
+
+    Session End:
+        Summarize performance, store it in DB.
+        Possibly show a fun “Good job!” animation.
+
+    Return Visit:
+        The tutor loads the DB, sees past interactions, and adapts.
+        If the user got bored with math last time, maybe start with reading or a short writing game.
+
+9. Conclusion
+
+    Flexible Interaction: The user picks a topic or the tutor suggests one based on logs.
+    Offline Data: Everything is stored locally in DB tables for interactions, performance, and local assets.
+    Adaptive Logic: A rules-based or local ML approach can adapt lesson difficulty and variety.
+    Game-Like Experience: Keep it fun with small animations, mini-games, and variety in reading/writing/math.
+
+By designing your app around session-based interaction logging, a performance table for each skill, and an adaptive decision engine that references these logs, you can create a dynamic, interactive, offline tutor. The user’s performance is only finalized and recorded at session end, but you can also store partial data in real time if needed. The next time the user logs in, the tutor references the logs to decide the next best topic or activity. This ensures a non-boring, motivational experience that cycles among reading, writing, and math, focusing on the user’s weakest areas while still offering variety.
+
+    UI Layer: Handles interactions, drawing canvas, and displays lesson content.
+    Logic Layer: Makes lesson decisions based on the user’s stored progress, user’s age, and tutor rules.
+    Local Storage: Stores user data, lessons, shape recognition model, and progress logs.
+
+3. Local Data Handling & Structure
+3.1 Data Storage Choice
+
+    SQLite or a local database library (e.g., sqflite in Flutter or react-native-sqlite-storage in RN).
+    Optional: Local NoSQL approach (e.g., Hive in Flutter) if you prefer a lightweight, schema-less DB.
+
+3.2 Tables / Collections
+
+    Profiles Table
+        id (Primary Key)
+        name (String)
+        age (Integer)
+    Progress Table
+        id (Primary Key)
+        profile_id (Foreign Key referencing Profiles)
+        lesson_id (String or int referencing a lesson)
+        status (e.g., “not_started”, “in_progress”, “completed”)
+        score (Optional numeric value if grading is used)
+    Local Content
+        Lessons can be stored as JSON in local files or in a “Lessons” table in SQLite.
+        Each lesson references an age_range or difficulty_level, so the logic layer picks content appropriate for the user’s age.
+
+4. Autonomous Tutor Logic (Technical Approach)
+
+    Rules-Based Engine
+        Define conditional statements (e.g., “IF age <= 6 THEN early reading lessons,” “IF user repeated mistakes > 3 THEN show demonstration.”).
+        Stored in code or in a local config file (JSON) that the app reads at runtime.
+
+    Decision Flow
+        On app start, retrieve user’s profile + progress from DB.
+        Evaluate rules (e.g., user’s current lesson, mastery level).
+        Determine next lesson or shape demonstration.
+
+    User Requests
+        If user asks for a specific demonstration:
+            Tutor checks whether the demonstration is relevant (e.g., user’s skill level, current lesson).
+            Tutor either approves or redirects to a more suitable lesson.
+
+5. Shape Recognition (Technical Details)
+
+    Implementation Options:
+        TensorFlow Lite:
+            Train or download a lightweight shape-detection model.
+            Bundle the .tflite model with the app.
+            On drawing completion (or in near real-time), pass the user’s drawn image/points to the model for inference.
+        OpenCV (Offline):
+            Classical shape detection (e.g., Hough transform, contour analysis).
+            Integrate an offline OpenCV library for iOS/Android.
+            Analyzes user’s drawn strokes or a rasterized image of the canvas.
+
+    Workflow:
+        User draws on a canvas (e.g., Flutter’s CustomPainter, RN’s react-native-sketch-canvas).
+        App captures the final strokes or at intervals, processes them with the local model.
+        Tutor receives the result (e.g., “circle detected” or “unrecognized shape”) and gives feedback.
+
+    Performance Considerations:
+        Ensure the model or detection routines are optimized for mobile.
+        Test on low-end devices to confirm real-time or near real-time performance.
+
+6. Step-by-Step Development Plan (Technical Focus)
+6.1 Phase 1: Project Initialization & Database Setup
+
+    Choose Framework (Flutter/React Native).
+    Install Local DB Plugins:
+        sqflite (Flutter) or react-native-sqlite-storage (React Native).
+    Implement Database Schema:
+        Create Profiles and Progress tables.
+        Test basic CRUD operations (create profile, store lesson progress, retrieve data).
+
+6.2 Phase 2: User Profile & Age Handling
+
+    Profile Creation Screen:
+        Collect Name + Age.
+        Insert into Profiles table.
+    Profile Selection:
+        On app start, list existing profiles from DB.
+        Let the user select or create a new one.
+
+6.3 Phase 3: Autonomous Tutor (Rules-Based)
+
+    Basic Rule Definitions:
+        Hard-code or store rules in a local file (e.g., rules.json).
+        Example logic:
+            if (age < 6) { show basic letters; } else { show next level content }
+    Logic Implementation:
+        A “DecisionManager” class/function that reads user progress and age, matches against rules, and returns the next content ID.
+    Integration:
+        Home screen calls “DecisionManager” to fetch the recommended lesson.
+        On lesson completion, the “DecisionManager” updates user progress and possibly modifies the “status” in Progress table.
+
+6.4 Phase 4: Shape Recognition Integration
+
+    Choose Approach (TFLite or OpenCV):
+        TFLite: Convert or train a small shape classifier; embed .tflite in the app.
+        OpenCV: Link native libraries for iOS/Android.
+    Canvas Implementation:
+        Add a drawing surface.
+        On “finish stroke” or “analyze” action, feed the stroke data or bitmap to the shape-recognition routine.
+    Tutor Feedback:
+        If recognized shape == expected shape, tutor praises user.
+        If repeated failure, tutor demonstrates step-by-step.
+
+6.5 Phase 5: Expanded Content & Adaptive Rules
+
+    Lesson Catalog:
+        Add a set of literacy and math lessons in local JSON or in a “Lessons” table.
+        Tag each lesson with recommended_age_min, recommended_age_max, or difficulty_level.
+    Adaptive Logic:
+        Expand “DecisionManager” rules:
+            “If user’s age is 7+ and has completed basic addition, recommend multiplication.”
+            “If user’s repeated error count is high, automatically drop difficulty or show a review lesson.”
+
+6.6 Phase 6: Testing & Optimization
+
+    Offline Tests:
+        Run the app in airplane mode to confirm no breakage.
+    Performance Profiling:
+        Ensure shape recognition is efficient.
+        Optimize DB queries or reduce model size if necessary.
+    Edge Cases:
+        Extremely young ages (like 2 or 3) or older ones (teenagers).
+        Unrecognized shapes (scribbles) with robust fallback logic.
+
+6.7 Phase 7: Deployment
+
+    Build App Binaries:
+        Generate iOS .ipa, Android .apk or .aab.
+    App Store Submission:
+        Provide child-appropriate descriptions and comply with relevant guidelines (e.g., Apple’s Kids Category).
+    Version Updates:
+        Future updates can add new lessons, refine shape detection, or expand autonomy rules.
+
+7. Key Technical Considerations
+
+    Memory & Storage
+        Keep the app’s size manageable, especially if bundling multiple lessons and a shape-recognition model.
+    Security & Privacy
+        Even though only name and age are stored, handle data responsibly.
+        Use device-level encryption if needed.
+    Scalability (Within Offline Context)
+        New lessons or model updates require app version updates.
+        Consider an optional “content pack” system if expansions become large.
+
+Final Note
+
+This technical plan focuses on the under-the-hood building blocks for an offline, autonomous-tutor app storing only name and age for each learner. The emphasis is on:
+
+    Local Database design (profiles, progress, lessons).
+    Rules-Based or Lightweight ML approach to autonomous lesson selection.
+    On-Device Shape Recognition using either TFLite or OpenCV.
+
+With these details in place, you can move forward to actual coding—defining project structure, implementing the database schema, building the rules/logic modules, and integrating an appropriate shape-recognition library.
+

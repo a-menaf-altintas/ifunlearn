@@ -1,3 +1,5 @@
+// FILE: lib/profile_creation_screen.dart
+
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
 
@@ -23,7 +25,9 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       bool exists = await DatabaseHelper().profileExists(name, age);
       if (exists) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile already exists. Please create a unique name.')),
+          const SnackBar(
+            content: Text('Profile already exists. Please create a unique name.'),
+          ),
         );
         return;
       }

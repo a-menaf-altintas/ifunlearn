@@ -35,6 +35,7 @@ void main() {
 
 --- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/tutor_home_screen.dart ---
 import 'package:flutter/material.dart';
+import 'tutor_interactive_screen.dart';
 
 class TutorHomeScreen extends StatelessWidget {
   final Map<String, dynamic> profile;
@@ -48,9 +49,27 @@ class TutorHomeScreen extends StatelessWidget {
         title: const Text('Tutor Home'),
       ),
       body: Center(
-        child: Text(
-          'Welcome, ${profile['name']}! Your age is ${profile['age']}.',
-          style: const TextStyle(fontSize: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Welcome, ${profile['name']}! Your age is ${profile['age']}.',
+              style: const TextStyle(fontSize: 24),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        TutorInteractiveScreen(profile: profile),
+                  ),
+                );
+              },
+              child: const Text('Launch Interactive Tutor'),
+            ),
+          ],
         ),
       ),
     );
@@ -147,7 +166,7 @@ import 'package:flutter/material.dart';
 import 'profile_selection_screen.dart';
 
 void main() {
-  runApp(iFunLearnApp());
+  runApp(const iFunLearnApp());
 }
 
 class iFunLearnApp extends StatelessWidget {
@@ -156,11 +175,12 @@ class iFunLearnApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false, // <-- Hide the debug banner
       title: 'iFunLearn',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: ProfileSelectionScreen(),
+      home: const ProfileSelectionScreen(),
     );
   }
 }
@@ -273,7 +293,152 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
 --- END OF FILE ---
 
+--- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/tutor_interactive_screen.dart ---
+// tutor_interactive_screen.dart
+
+import 'package:flutter/material.dart';
+
+
+class TutorInteractiveScreen extends StatefulWidget {
+  final Map<String, dynamic> profile;
+
+  const TutorInteractiveScreen({Key? key, required this.profile})
+      : super(key: key);
+
+  @override
+  _TutorInteractiveScreenState createState() => _TutorInteractiveScreenState();
+}
+
+class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
+  // Initial tutor message; in a real scenario this would be set by a decision engine.
+  String tutorMessage =
+      "Hello, let's start your session! Draw something or say something to begin.";
+
+  // Variables to hold user inputs
+  String userVoiceInput = "";
+  List<Offset?> drawingPoints = [];
+
+  // A placeholder decision engine that updates the tutor message based on interaction.
+  // In a real implementation, this would consult local progress data and determine the next lesson.
+  void _processUserInteraction() {
+    // For this demo, we simply change the tutor's message after input.
+    setState(() {
+      tutorMessage = "Great job! Based on your input, let's move to the next activity.";
+      // Clear the inputs (if needed) after processing.
+      userVoiceInput = "";
+      drawingPoints = [];
+    });
+  }
+
+  // Called as the user draws on the canvas.
+  void _addDrawingPoint(Offset point) {
+    setState(() {
+      drawingPoints.add(point);
+    });
+  }
+
+  // Called when the drawing gesture ends.
+  void _endDrawing() {
+    // Process the drawing input; here, it simply triggers the decision engine.
+    _processUserInteraction();
+  }
+
+  // Simulated voice input handler; in a real app, integrate with a speech-to-text package.
+  void _simulateVoiceInput(String input) {
+    setState(() {
+      userVoiceInput = input;
+    });
+    _processUserInteraction();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Tutor Session for ${widget.profile['name']}'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            // Tutor's message area that updates automatically.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16.0),
+              color: Colors.blue.shade100,
+              child: Text(
+                tutorMessage,
+                style: const TextStyle(fontSize: 20),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Drawing canvas for free-hand drawing input.
+            Expanded(
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  RenderBox? box = context.findRenderObject() as RenderBox?;
+                  if (box != null) {
+                    Offset localPosition =
+                        box.globalToLocal(details.globalPosition);
+                    _addDrawingPoint(localPosition);
+                  }
+                },
+                onPanEnd: (details) {
+                  _endDrawing();
+                },
+                child: CustomPaint(
+                  painter: DrawingPainter(drawingPoints: drawingPoints),
+                  child: Container(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Voice input area (simulated via TextField).
+            TextField(
+              onSubmitted: _simulateVoiceInput,
+              decoration: const InputDecoration(
+                labelText: 'Talk to your tutor (simulate speech input)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class DrawingPainter extends CustomPainter {
+  final List<Offset?> drawingPoints;
+
+  DrawingPainter({required this.drawingPoints});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round;
+
+    for (int i = 0; i < drawingPoints.length - 1; i++) {
+      if (drawingPoints[i] != null && drawingPoints[i + 1] != null) {
+        canvas.drawLine(drawingPoints[i]!, drawingPoints[i + 1]!, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(DrawingPainter oldDelegate) =>
+      oldDelegate.drawingPoints != drawingPoints;
+}
+
+--- END OF FILE ---
+
 --- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/profile_selection_screen.dart ---
+// FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/profile_selection_screen.dart
+
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
 import 'profile_creation_screen.dart';
@@ -297,13 +462,13 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
 
   // Retrieve all profiles from the database
   void _loadProfiles() async {
-    List<Map<String, dynamic>> fetchedProfiles = await DatabaseHelper().getProfiles();
+    final fetchedProfiles = await DatabaseHelper().getProfiles();
     setState(() {
       profiles = fetchedProfiles;
     });
   }
 
-  // Navigate to the TutorHomeScreen with the selected profile
+  // Navigate to TutorHomeScreen with the selected profile
   void _selectProfile(Map<String, dynamic> profile) {
     Navigator.push(
       context,
@@ -311,38 +476,113 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
     );
   }
 
+  // Navigate to ProfileCreationScreen to add a new profile
+  void _addNewProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProfileCreationScreen()),
+    ).then((_) => _loadProfiles());
+  }
+
+  // Show all profiles in a bottom sheet
+  void _showAllProfilesSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: ListView.separated(
+            itemCount: profiles.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final profile = profiles[index];
+              return ListTile(
+                title: Text(profile['name']),
+                onTap: () {
+                  Navigator.pop(context); // Close bottom sheet
+                  _selectProfile(profile);
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final int displayCount = (profiles.length <= 3) ? profiles.length : 3;
+    final bool hasMoreProfiles = profiles.length > 3;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              // Navigate to the ProfileCreationScreen; refresh profiles when returning
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfileCreationScreen()),
-              ).then((_) => _loadProfiles());
-            },
-          )
-        ],
-      ),
-      body: profiles.isEmpty
-          ? const Center(
-              child: Text('No profiles found. Tap the "+" icon to create one.'),
-            )
-          : ListView.builder(
-              itemCount: profiles.length,
-              itemBuilder: (context, index) {
-                final profile = profiles[index];
-                return ListTile(
-                  title: Text('${profile['name']} (${profile['age']})'),
-                  onTap: () => _selectProfile(profile),
-                );
-              },
+      body: SafeArea(
+        child: Center(
+          // SingleChildScrollView + a centered column to handle any overflow
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Title
+                Text(
+                  'Profiles',
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 16),
+
+                // If no profiles, show a message
+                if (profiles.isEmpty) ...[
+                  Text(
+                    'No profiles found.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ]
+                // If we have profiles, display up to 3
+                else ...[
+                  for (int i = 0; i < displayCount; i++) ...[
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _selectProfile(profiles[i]),
+                      child: Text(
+                        profiles[i]['name'],
+                        style: Theme.of(context).textTheme.titleMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                  // If more than 3 profiles, show "Show All Profiles"
+                  if (hasMoreProfiles) ...[
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _showAllProfilesSheet,
+                      child: const Text('Show All Profiles'),
+                    ),
+                  ],
+                ],
+
+                const SizedBox(height: 24),
+
+                // "Add a new profile" button
+                ElevatedButton.icon(
+                  onPressed: _addNewProfile,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add a new profile'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+              ],
             ),
+          ),
+        ),
+      ),
     );
   }
 }

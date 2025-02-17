@@ -1,3 +1,5 @@
+// FILE: lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'profile_selection_screen.dart';
 
@@ -11,7 +13,7 @@ class iFunLearnApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // <-- Hide the debug banner
+      debugShowCheckedModeBanner: false, // Hide the debug banner
       title: 'iFunLearn',
       theme: ThemeData(
         primarySwatch: Colors.blue,

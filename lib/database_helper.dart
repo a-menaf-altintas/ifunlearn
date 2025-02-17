@@ -1,3 +1,5 @@
+// FILE: lib/database_helper.dart
+
 import 'dart:async';
 import 'dart:io';
 import 'package:sqflite/sqflite.dart';
@@ -54,7 +56,7 @@ class DatabaseHelper {
     ''');
   }
 
-  // CRUD operation: Insert a new profile
+  // Insert a new profile
   Future<int> insertProfile(Map<String, dynamic> profile) async {
     Database db = await database;
     return await db.insert('Profiles', profile);
@@ -71,7 +73,7 @@ class DatabaseHelper {
     return results.isNotEmpty;
   }
 
-  // Retrieve all profiles from the database
+  // Retrieve all profiles
   Future<List<Map<String, dynamic>>> getProfiles() async {
     Database db = await database;
     return await db.query('Profiles');
