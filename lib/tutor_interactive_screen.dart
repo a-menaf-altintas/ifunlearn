@@ -16,14 +16,30 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
 
   String userVoiceInput = "";
   List<Offset?> drawingPoints = [];
+  late GlobalKey _canvasKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _canvasKey = GlobalKey();
+  }
 
   void _addDrawingPoint(Offset point) {
-    setState(() {
-      drawingPoints.add(point);
-    });
+    final RenderBox box = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+    final Size size = box.size;
+
+    // Ensure drawing remains within bounds
+    if (point.dx >= 0 && point.dx <= size.width && point.dy >= 0 && point.dy <= size.height) {
+      setState(() {
+        drawingPoints.add(point);
+      });
+    }
   }
 
   void _endDrawing() {
+    setState(() {
+      drawingPoints.add(null); // Add null to separate strokes
+    });
     _processUserInteraction();
   }
 
@@ -36,8 +52,7 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
 
   void _processUserInteraction() {
     setState(() {
-      tutorMessage =
-          "Great job! Based on your input, let's move to the next activity.";
+      tutorMessage = "Great job! Based on your input, let's move to the next activity.";
       userVoiceInput = "";
     });
   }
@@ -61,24 +76,38 @@ class _TutorInteractiveScreenState extends State<TutorInteractiveScreen> {
           ),
           const SizedBox(height: 10),
 
-          // Corrected Drawing Area
+          // **Fixed Interactive Drawing Area**
           Expanded(
-            child: GestureDetector(
-              onPanUpdate: (details) {
-                RenderBox box = context.findRenderObject() as RenderBox;
-                final localPosition = box.globalToLocal(details.globalPosition);
-                _addDrawingPoint(localPosition);
-              },
-              onPanEnd: (_) => _endDrawing(),
+            child: Center(
               child: Container(
-                color: Colors.white,
-                child: CustomPaint(
-                  painter: DrawingPainter(drawingPoints),
-                  size: Size.infinite,
+                key: _canvasKey,
+                width: MediaQuery.of(context).size.width * 0.9,
+                height: MediaQuery.of(context).size.height * 0.4,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black, width: 2),
+                  color: Colors.white,
+                ),
+                child: GestureDetector(
+                  onPanStart: (details) {
+                    RenderBox box = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+                    final localPosition = box.globalToLocal(details.globalPosition);
+                    _addDrawingPoint(localPosition);
+                  },
+                  onPanUpdate: (details) {
+                    RenderBox box = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+                    final localPosition = box.globalToLocal(details.globalPosition);
+                    _addDrawingPoint(localPosition);
+                  },
+                  onPanEnd: (_) => _endDrawing(),
+                  child: CustomPaint(
+                    painter: DrawingPainter(drawingPoints),
+                    child: Container(),
+                  ),
                 ),
               ),
             ),
           ),
+
           const SizedBox(height: 10),
 
           // Clear Button
