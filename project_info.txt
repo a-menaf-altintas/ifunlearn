@@ -1,0 +1,468 @@
+
+--- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/test/widget_test.dart ---
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:ifunlearn/main.dart';
+
+void main() {
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(const MyApp());
+
+    // Verify that our counter starts at 0.
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
+
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
+
+    // Verify that our counter has incremented.
+    expect(find.text('0'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
+  });
+}
+
+--- END OF FILE ---
+
+--- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/tutor_home_screen.dart ---
+import 'package:flutter/material.dart';
+
+class TutorHomeScreen extends StatelessWidget {
+  final Map<String, dynamic> profile;
+
+  const TutorHomeScreen({Key? key, required this.profile}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Tutor Home'),
+      ),
+      body: Center(
+        child: Text(
+          'Welcome, ${profile['name']}! Your age is ${profile['age']}.',
+          style: const TextStyle(fontSize: 24),
+        ),
+      ),
+    );
+  }
+}
+
+--- END OF FILE ---
+
+--- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/database_helper.dart ---
+import 'dart:async';
+import 'dart:io';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+
+class DatabaseHelper {
+  // Singleton pattern to ensure only one instance is used
+  static final DatabaseHelper _instance = DatabaseHelper._internal();
+  factory DatabaseHelper() => _instance;
+  DatabaseHelper._internal();
+
+  static Database? _database;
+
+  // Getter for the database instance
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  // Initialize the database and define its location and name
+  Future<Database> _initDatabase() async {
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    String path = join(documentsDirectory.path, 'ifunlearn.db');
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: _onCreate,
+    );
+  }
+
+  // Create the required tables when the database is first created
+  Future _onCreate(Database db, int version) async {
+    // Create Profiles table for storing learner's name and age
+    await db.execute('''
+      CREATE TABLE Profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        age INTEGER NOT NULL
+      )
+    ''');
+
+    // Create Progress table to log lesson progress and scores
+    await db.execute('''
+      CREATE TABLE Progress (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        profile_id INTEGER,
+        lesson_id TEXT,
+        status TEXT,
+        score REAL,
+        FOREIGN KEY (profile_id) REFERENCES Profiles (id)
+      )
+    ''');
+  }
+
+  // CRUD operation: Insert a new profile
+  Future<int> insertProfile(Map<String, dynamic> profile) async {
+    Database db = await database;
+    return await db.insert('Profiles', profile);
+  }
+
+  // Check if a profile with the same name and age already exists
+  Future<bool> profileExists(String name, int age) async {
+    final db = await database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'Profiles',
+      where: 'name = ? AND age = ?',
+      whereArgs: [name, age],
+    );
+    return results.isNotEmpty;
+  }
+
+  // Retrieve all profiles from the database
+  Future<List<Map<String, dynamic>>> getProfiles() async {
+    Database db = await database;
+    return await db.query('Profiles');
+  }
+}
+
+--- END OF FILE ---
+
+--- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/main.dart ---
+import 'package:flutter/material.dart';
+import 'profile_selection_screen.dart';
+
+void main() {
+  runApp(iFunLearnApp());
+}
+
+class iFunLearnApp extends StatelessWidget {
+  const iFunLearnApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'iFunLearn',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: ProfileSelectionScreen(),
+    );
+  }
+}
+
+--- END OF FILE ---
+
+--- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/profile_creation_screen.dart ---
+import 'package:flutter/material.dart';
+import 'database_helper.dart';
+
+class ProfileCreationScreen extends StatefulWidget {
+  const ProfileCreationScreen({Key? key}) : super(key: key);
+
+  @override
+  _ProfileCreationScreenState createState() => _ProfileCreationScreenState();
+}
+
+class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+
+  // Function to insert the new profile into the database
+  void _submitProfile() async {
+    if (_formKey.currentState!.validate()) {
+      String name = _nameController.text.trim();
+      int age = int.parse(_ageController.text.trim());
+
+      // Check if a profile with the same name and age already exists
+      bool exists = await DatabaseHelper().profileExists(name, age);
+      if (exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile already exists. Please create a unique name.')),
+        );
+        return;
+      }
+
+      // If unique, proceed to insert the profile
+      Map<String, dynamic> profile = {
+        'name': name,
+        'age': age,
+      };
+
+      int id = await DatabaseHelper().insertProfile(profile);
+      print('Profile inserted with id: $id');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile created successfully!')),
+      );
+      _nameController.clear();
+      _ageController.clear();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create Profile'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              // Name input field
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your name';
+                  }
+                  return null;
+                },
+              ),
+              // Age input field
+              TextFormField(
+                controller: _ageController,
+                decoration: const InputDecoration(
+                  labelText: 'Age',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your age';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              // Button to create profile
+              ElevatedButton(
+                onPressed: _submitProfile,
+                child: const Text('Create Profile'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+--- END OF FILE ---
+
+--- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/lib/profile_selection_screen.dart ---
+import 'package:flutter/material.dart';
+import 'database_helper.dart';
+import 'profile_creation_screen.dart';
+import 'tutor_home_screen.dart';
+
+class ProfileSelectionScreen extends StatefulWidget {
+  const ProfileSelectionScreen({Key? key}) : super(key: key);
+
+  @override
+  _ProfileSelectionScreenState createState() => _ProfileSelectionScreenState();
+}
+
+class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
+  List<Map<String, dynamic>> profiles = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfiles();
+  }
+
+  // Retrieve all profiles from the database
+  void _loadProfiles() async {
+    List<Map<String, dynamic>> fetchedProfiles = await DatabaseHelper().getProfiles();
+    setState(() {
+      profiles = fetchedProfiles;
+    });
+  }
+
+  // Navigate to the TutorHomeScreen with the selected profile
+  void _selectProfile(Map<String, dynamic> profile) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => TutorHomeScreen(profile: profile)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Select Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              // Navigate to the ProfileCreationScreen; refresh profiles when returning
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileCreationScreen()),
+              ).then((_) => _loadProfiles());
+            },
+          )
+        ],
+      ),
+      body: profiles.isEmpty
+          ? const Center(
+              child: Text('No profiles found. Tap the "+" icon to create one.'),
+            )
+          : ListView.builder(
+              itemCount: profiles.length,
+              itemBuilder: (context, index) {
+                final profile = profiles[index];
+                return ListTile(
+                  title: Text('${profile['name']} (${profile['age']})'),
+                  onTap: () => _selectProfile(profile),
+                );
+              },
+            ),
+    );
+  }
+}
+
+--- END OF FILE ---
+
+--- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/.dart_tool/flutter_build/dart_plugin_registrant.dart ---
+//
+// Generated file. Do not edit.
+// This file is generated from template in file `flutter_tools/lib/src/flutter_plugins.dart`.
+//
+
+// @dart = 3.7
+
+import 'dart:io'; // flutter_ignore: dart_io_import.
+import 'package:path_provider_android/path_provider_android.dart';
+import 'package:sqflite_android/sqflite_android.dart';
+import 'package:path_provider_foundation/path_provider_foundation.dart';
+import 'package:sqflite_darwin/sqflite_darwin.dart';
+import 'package:path_provider_linux/path_provider_linux.dart';
+import 'package:path_provider_foundation/path_provider_foundation.dart';
+import 'package:sqflite_darwin/sqflite_darwin.dart';
+import 'package:path_provider_windows/path_provider_windows.dart';
+
+@pragma('vm:entry-point')
+class _PluginRegistrant {
+
+  @pragma('vm:entry-point')
+  static void register() {
+    if (Platform.isAndroid) {
+      try {
+        PathProviderAndroid.registerWith();
+      } catch (err) {
+        print(
+          '`path_provider_android` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
+      try {
+        SqfliteAndroid.registerWith();
+      } catch (err) {
+        print(
+          '`sqflite_android` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
+    } else if (Platform.isIOS) {
+      try {
+        PathProviderFoundation.registerWith();
+      } catch (err) {
+        print(
+          '`path_provider_foundation` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
+      try {
+        SqfliteDarwin.registerWith();
+      } catch (err) {
+        print(
+          '`sqflite_darwin` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
+    } else if (Platform.isLinux) {
+      try {
+        PathProviderLinux.registerWith();
+      } catch (err) {
+        print(
+          '`path_provider_linux` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
+    } else if (Platform.isMacOS) {
+      try {
+        PathProviderFoundation.registerWith();
+      } catch (err) {
+        print(
+          '`path_provider_foundation` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
+      try {
+        SqfliteDarwin.registerWith();
+      } catch (err) {
+        print(
+          '`sqflite_darwin` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
+    } else if (Platform.isWindows) {
+      try {
+        PathProviderWindows.registerWith();
+      } catch (err) {
+        print(
+          '`path_provider_windows` threw an error: $err. '
+          'The app may not function as expected until you remove this plugin from pubspec.yaml'
+        );
+      }
+
+    }
+  }
+}
+
+--- END OF FILE ---
+
+--- FILE: /Users/aaltintas/development/interact_play_learn/ifunlearn/.dart_tool/dartpad/web_plugin_registrant.dart ---
+// Flutter web plugin registrant file.
+//
+// Generated file. Do not edit.
+//
+
+// ignore_for_file: type=lint
+
+void registerPlugins() {}
+
+--- END OF FILE ---
