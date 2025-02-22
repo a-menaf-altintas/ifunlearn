@@ -1,32 +1,23 @@
-//
-//  ifunlearnApp.swift
-//  ifunlearn
-//
-//  Created by Abdulmenaf Altintas on 2025-02-21.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
 struct ifunlearnApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+    // Set up SwiftData ModelContainer with our UserProfile schema
+    var modelContainer: ModelContainer = {
+        let schema = Schema([UserProfile.self])
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(for: schema)
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            fatalError("Failed to create ModelContainer: \(error)")
         }
     }()
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // Our main starting screen is ProfileSelectionView
+            ProfileSelectionView()
+                .modelContainer(modelContainer)
         }
-        .modelContainer(sharedModelContainer)
     }
 }

@@ -1,22 +1,15 @@
-//
-//  UserProfile.swift
-//  ifunlearn
-//
-//  Created by Abdulmenaf Altintas on 2025-02-21.
-//
-
 import Foundation
 import SwiftData
 
 @Model
-class UserProfile {
+class UserProfile: Identifiable {
     var id: UUID
     var name: String
-    var creationDate: Date
+    var age: Int
 
-    init(id: UUID = UUID(), name: String, creationDate: Date = Date()) {
+    init(id: UUID = UUID(), name: String, age: Int) {
         self.id = id
         self.name = name
-        self.creationDate = creationDate
+        self.age = age
     }
 }
