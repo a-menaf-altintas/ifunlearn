@@ -8,7 +8,7 @@ struct DrawingToolbarView: View {
     var redoAction: () -> Void
     var clearAction: () -> Void
 
-    let colors: [UIColor] = [.black, .red, .blue, .green, .orange, .purple, .brown, .yellow, .gray]
+    let colors: [UIColor] = [.black, .red, .blue, .green, .orange, .purple, .brown, .yellow, .gray, .systemPink]
 
     var body: some View {
         VStack {
@@ -27,6 +27,16 @@ struct DrawingToolbarView: View {
                                     .stroke(selectedColor == color ? Color.black : Color.clear, lineWidth: 2)
                             )
                     }
+                }
+
+                // Rainbow Gradient Button
+                Button(action: {
+                    selectedColor = UIColor(patternImage: createRainbowGradientImage(size: CGSize(width: 30, height: 30)))
+                    isEraserActive = false
+                }) {
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(LinearGradient(gradient: Gradient(colors: [.red, .orange, .yellow, .green, .blue, .purple]), startPoint: .leading, endPoint: .trailing))
+                        .frame(width: 30, height: 30)
                 }
             }
             .padding(.top, 10)
@@ -74,6 +84,24 @@ struct DrawingToolbarView: View {
                 }
             }
             .padding()
+        }
+    }
+
+    // Function to create a rainbow gradient image for UIColor
+    private func createRainbowGradientImage(size: CGSize) -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            let gradient = CGGradient(
+                colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                colors: [UIColor.red.cgColor, UIColor.orange.cgColor, UIColor.yellow.cgColor, UIColor.green.cgColor, UIColor.blue.cgColor, UIColor.purple.cgColor] as CFArray,
+                locations: nil
+            )
+            context.cgContext.drawLinearGradient(
+                gradient!,
+                start: CGPoint(x: 0, y: 0),
+                end: CGPoint(x: size.width, y: 0),
+                options: []
+            )
         }
     }
 }
