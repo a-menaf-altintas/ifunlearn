@@ -2,18 +2,18 @@ import SwiftUI
 
 struct TutorInteractiveView: View {
     let profile: UserProfile
-    
-    // Your existing states
+
+    // Canvas and toolbar states.
     @State private var selectedColor: UIColor = .black
     @State private var selectedThickness: CGFloat = 3.0
     @State private var isEraserActive: Bool = false
 
-    // Tracks whether user is drawing (optional if you also want to disable scrolling)
+    // Track whether the user is drawing.
     @State private var isDrawing = false
 
     var body: some View {
-        // Replace ScrollView with our custom ImmediateScrollView
-        ImmediateScrollView {
+        // Use ImmediateScrollView and disable scrolling when drawing.
+        ImmediateScrollView(scrollDisabled: isDrawing) {
             VStack(spacing: 20) {
                 Text("Interactive Drawing")
                     .font(.title)
@@ -22,6 +22,7 @@ struct TutorInteractiveView: View {
 
                 Text("Profile: \(profile.name), Age: \(profile.age)")
 
+                // Drawing canvas.
                 DrawingCanvasView(
                     selectedColor: $selectedColor,
                     selectedThickness: $selectedThickness,
@@ -32,6 +33,7 @@ struct TutorInteractiveView: View {
                 .border(Color.black, width: 2)
                 .background(Color.white)
 
+                // Toolbar for drawing actions.
                 DrawingToolbarView(
                     selectedColor: $selectedColor,
                     selectedThickness: $selectedThickness,
@@ -44,10 +46,6 @@ struct TutorInteractiveView: View {
             }
             .frame(maxWidth: .infinity)
         }
-        // If you want to disable scrolling while actively drawing,
-        // keep this line. Otherwise you can remove it:
-        .scrollDisabled(isDrawing)
-
         .navigationTitle("Tutor Interactive")
     }
 

@@ -1,48 +1,48 @@
-//
-//  Untitled.swift
-//  ifunlearn
-//
-//  Created by Abdulmenaf Altintas on 2025-02-22.
-//
-
 import SwiftUI
 import UIKit
 
-/// A SwiftUI container that hosts its content in a UIScrollView
-/// with delaysContentTouches = false. This eliminates the "two-tap"
-/// delay you see in a normal ScrollView.
+/// A SwiftUI container that hosts its content in a UIScrollView with
+/// delaysContentTouches = false. The content’s width is forced to match
+/// the scroll view’s width to disable horizontal scrolling. Scrolling is
+/// enabled or disabled based on the `scrollDisabled` flag.
 struct ImmediateScrollView<Content: View>: UIViewRepresentable {
     let content: Content
+    var scrollDisabled: Bool = false
 
-    // We use a @ViewBuilder init so you can pass in any SwiftUI content.
-    init(@ViewBuilder content: () -> Content) {
+    // Initialize with a ViewBuilder and an optional scrollDisabled flag.
+    init(scrollDisabled: Bool = false, @ViewBuilder content: () -> Content) {
         self.content = content()
+        self.scrollDisabled = scrollDisabled
     }
 
     func makeUIView(context: Context) -> UIScrollView {
-        // 1) Create the UIScrollView
         let scrollView = UIScrollView()
-        scrollView.delaysContentTouches = false   // Key line!
-        scrollView.canCancelContentTouches = true // Usually helpful
+        scrollView.delaysContentTouches = false   // Immediate touch delivery.
+        scrollView.canCancelContentTouches = true
         scrollView.backgroundColor = .clear
 
-        // 2) Create a UIHostingController for the SwiftUI content
+        // Disable horizontal bouncing.
+        scrollView.alwaysBounceHorizontal = false
+        scrollView.alwaysBounceVertical = true
+
+        // Allow subviews to receive touches even if scrolling begins.
+        scrollView.panGestureRecognizer.cancelsTouchesInView = false
+
+        // Create a hosting controller for the SwiftUI content.
         let hostingController = UIHostingController(rootView: content)
         hostingController.view.backgroundColor = .clear
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
-        // 3) Add the hosting controller’s view to the scroll view
+        // Add the hosting controller’s view to the scroll view.
         scrollView.addSubview(hostingController.view)
 
-        // 4) Pin the edges so the content sizes correctly
+        // Pin the hosting controller’s view to all edges of the scroll view's content.
         NSLayoutConstraint.activate([
             hostingController.view.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
             hostingController.view.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
             hostingController.view.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-
-            // Match the scroll view’s width if you want vertical scrolling.
-            // Remove if you want horizontal scrolling.
+            // Force the content's width to match the scroll view’s width (prevents horizontal scrolling).
             hostingController.view.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
         ])
 
@@ -50,6 +50,7 @@ struct ImmediateScrollView<Content: View>: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UIScrollView, context: Context) {
-        // Nothing needed here; SwiftUI updates the content automatically.
+        // Enable or disable scrolling based on the flag.
+        uiView.isScrollEnabled = !scrollDisabled
     }
 }
