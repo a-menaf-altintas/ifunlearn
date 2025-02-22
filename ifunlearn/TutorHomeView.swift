@@ -10,23 +10,32 @@ struct TutorHomeView: View {
     @State private var showDeleteAlert = false
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack {
+            // Top portion: welcome text
             Text("Welcome, \(profile.name)!")
                 .font(.largeTitle)
+                .padding(.top, 40)
             Text("Age: \(profile.age)")
 
-            // Go to the interactive tutor
+            // Spacer to push the "Launch Interactive Tutor" button into the middle
+            Spacer()
+
+            // "Launch Interactive Tutor" in the vertical center
             NavigationLink(destination: TutorInteractiveView(profile: profile)) {
                 Text("Launch Interactive Tutor")
             }
             .buttonStyle(.borderedProminent)
 
-            // A button to delete this profile
+            // Another spacer so "Remove Profile" stays near the bottom
+            Spacer()
+
+            // "Remove Profile" at bottom
             Button(role: .destructive) {
                 showDeleteAlert = true
             } label: {
                 Label("Remove Profile", systemImage: "minus.circle")
             }
+            .padding(.bottom, 40)
         }
         .alert("Remove Profile?", isPresented: $showDeleteAlert) {
             Button("Remove", role: .destructive) {
@@ -42,10 +51,10 @@ struct TutorHomeView: View {
 
     private func removeProfileAndPop() {
         modelContext.delete(profile)
-        // Force immediate save if you like:
+        // Optionally force immediate save:
         // try? modelContext.save()
 
-        // Then pop back to the previous screen:
+        // Then pop back to the previous screen
         dismiss()
     }
 }
