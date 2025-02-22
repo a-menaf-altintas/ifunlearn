@@ -31,7 +31,7 @@ struct ProfileSelectionView: View {
                         ForEach(profiles) { profile in
                             // One row = Link on the left, minus button on the right
                             HStack {
-                                // 1) NavigationLink only covers the text area on the left
+                                // NavigationLink covers only the text area on the left
                                 NavigationLink(destination: TutorHomeView(profile: profile)) {
                                     VStack(alignment: .leading) {
                                         Text(profile.name)
@@ -41,11 +41,11 @@ struct ProfileSelectionView: View {
                                             .foregroundColor(.secondary)
                                     }
                                 }
-                                .buttonStyle(.plain)    // keep the link from overshadowing
+                                .buttonStyle(.plain) // keep the link from overshadowing
 
                                 Spacer()
 
-                                // 2) The minus button for removal
+                                // The minus button for removal
                                 Button {
                                     profileToDelete = profile
                                     showDeleteAlert = true
@@ -54,8 +54,8 @@ struct ProfileSelectionView: View {
                                         .foregroundColor(.red)
                                         .imageScale(.large)
                                 }
-                                // 3) Make it a borderless/plain style,
-                                // so it does not make the entire row tappable
+                                // Make it a borderless/plain style so the entire row
+                                // isn’t tappable
                                 .buttonStyle(.borderless)
                             }
                         }
@@ -88,7 +88,7 @@ struct ProfileSelectionView: View {
 
                 Spacer(minLength: 0)
             }
-            .navigationTitle("Profiles")
+            // NOTE: Removed .navigationTitle("Profiles") so the large text is gone.
         }
         .sheet(isPresented: $showCreateProfile) {
             ProfileCreationView()
