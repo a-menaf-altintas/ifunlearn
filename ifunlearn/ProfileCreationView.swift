@@ -8,6 +8,9 @@ struct ProfileCreationView: View {
     @State private var name: String = ""
     @State private var ageString: String = ""
 
+    // New: for showing an alert if a duplicate name exists
+    @State private var showDuplicateAlert = false
+
     var body: some View {
         NavigationStack {
             Form {
@@ -31,17 +34,36 @@ struct ProfileCreationView: View {
                     .disabled(name.isEmpty || ageString.isEmpty)
                 }
             }
+            // If user tries to save a duplicate name, show an alert
+            .alert("Duplicate Profile Name", isPresented: $showDuplicateAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("A profile named \"\(name)\" already exists. Please choose another name.")
+            }
         }
     }
 
     private func createProfile() {
         guard let ageInt = Int(ageString) else { return }
+
+        // 1) Check if any profile already has this same name
+        let fetchDescriptor = FetchDescriptor<UserProfile>(
+            predicate: #Predicate { $0.name == name }
+        )
+        // Attempt to fetch
+        if let existingProfiles = try? modelContext.fetch(fetchDescriptor),
+           !existingProfiles.isEmpty {
+            // We found a duplicate -> show the alert, do not create
+            showDuplicateAlert = true
+            return
+        }
+
+        // 2) If no duplicates, proceed with creation
         let newProfile = UserProfile(name: name, age: ageInt)
         modelContext.insert(newProfile)
-
-        // SwiftData automatically saves eventually, but you can force it:
+        // Optionally force save:
         // try? modelContext.save()
-
-        dismiss() // Close this sheet
+        
+        dismiss() // Close the sheet
     }
 }
