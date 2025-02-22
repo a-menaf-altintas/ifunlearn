@@ -2,54 +2,81 @@ import SwiftUI
 import SwiftData
 
 struct ProfileSelectionView: View {
-    // To perform delete/save operations with SwiftData
+    // SwiftData context
     @Environment(\.modelContext) private var modelContext
     
-    // This Query automatically fetches all UserProfile objects
+    // Automatically fetches all UserProfile objects
     @Query private var profiles: [UserProfile]
     
-    // Controls whether ProfileCreationView is presented
+    // For showing ProfileCreationView
     @State private var showCreateProfile = false
+    
+    // For delete confirmation alert
+    @State private var showDeleteAlert = false
+    @State private var profileToDelete: UserProfile?
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-                
                 Text("Available Profiles")
                     .font(.title2)
                     .padding(.top, 30)
-                
+
                 if profiles.isEmpty {
                     Text("No profiles found. Please add one.")
                         .foregroundColor(.secondary)
                 } else {
-                    // Show existing profiles in a List
+                    // Show existing profiles in a list
                     List {
                         ForEach(profiles) { profile in
-                            NavigationLink(destination: TutorHomeView(profile: profile)) {
-                                VStack(alignment: .leading) {
-                                    Text(profile.name)
-                                        .font(.headline)
-                                    Text("Age: \(profile.age)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
+                            // One row = Link on the left, minus button on the right
+                            HStack {
+                                // 1) NavigationLink only covers the text area on the left
+                                NavigationLink(destination: TutorHomeView(profile: profile)) {
+                                    VStack(alignment: .leading) {
+                                        Text(profile.name)
+                                            .font(.headline)
+                                        Text("Age: \(profile.age)")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                    }
                                 }
-                            }
-                            // Swipe to delete
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    deleteProfile(profile)
+                                .buttonStyle(.plain)    // keep the link from overshadowing
+
+                                Spacer()
+
+                                // 2) The minus button for removal
+                                Button {
+                                    profileToDelete = profile
+                                    showDeleteAlert = true
                                 } label: {
-                                    Label("Delete", systemImage: "trash")
+                                    Image(systemName: "minus.circle")
+                                        .foregroundColor(.red)
+                                        .imageScale(.large)
                                 }
+                                // 3) Make it a borderless/plain style,
+                                // so it does not make the entire row tappable
+                                .buttonStyle(.borderless)
                             }
                         }
                     }
-                    // Make the list a bit smaller so it stays more centered
                     .frame(height: 250)
+                    // Alert triggered when the user taps the minus button
+                    .alert(
+                        "Remove Profile?",
+                        isPresented: $showDeleteAlert,
+                        presenting: profileToDelete
+                    ) { toRemove in
+                        Button("Remove", role: .destructive) {
+                            deleteProfile(toRemove)
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: { toRemove in
+                        Text("Are you sure you want to remove \(toRemove.name)?")
+                    }
                 }
 
-                // "Add Profile" button at the bottom (still centered)
+                // "Add Profile" button
                 Button {
                     showCreateProfile = true
                 } label: {
@@ -59,7 +86,6 @@ struct ProfileSelectionView: View {
                 .buttonStyle(.borderedProminent)
                 .padding(.bottom, 30)
 
-                // Spacer if you want extra space at the bottom
                 Spacer(minLength: 0)
             }
             .navigationTitle("Profiles")
